@@ -5,7 +5,8 @@ Contractul OpenAPI 3.0 al Research Resource Manager (`openapi.yaml`). Este inclu
 ## Flux de lucru
 - Fiecare modificare are un tichet Jira (`TO-<nr>`). Dacă utilizatorul nu a dat cheia, întreabă-l înainte de a crea ramura. Nu inventa chei.
 - Nu face niciodată commit sau push direct pe `main`. Ramura are forma `feature/TO-<nr>-descriere`, iar modificarea intră prin PR cu minim 1 aprobare și squash merge.
-- Commit-urile au forma `feat(contract): TO-<nr> descriere` (tipuri: `feat`, `fix`, `docs`, `chore`).
+- Commit-urile au forma `feat(contract): TO-<nr> descriere` (tipuri: `feat`, `fix`, `docs`, `chore`). Titlul PR-ului are aceeași formă.
+- Descrierea PR-ului urmează template-ul din `.github/pull_request_template.md` (Context, Ce s-a schimbat, Compatibilitate, Verificare, Legat de). Completează toate secțiunile, fără secțiuni noi.
 
 ## Reguli pentru `openapi.yaml`
 - **Căile sunt în engleză, la plural** (`/resources`, `/resource-categories`). **Câmpurile JSON și enumerările sunt în română**, ca în baza de date (`denumire`, `laboratorId`, `StareResursa: [Activa, Mentenanta, Defecta]`).
