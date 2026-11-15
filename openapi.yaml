@@ -631,10 +631,14 @@ paths:
       operationId: getReservations
       tags: [Rezervări]
       summary: Rezervările utilizatorului curent („Rezervările mele”)
+      description: >
+        Doar rezervările în care utilizatorul curent este solicitant, ordonate descrescător după start.
+        Cu `from` și/sau `to` se întorc rezervările al căror interval [start, sfarsit) se intersectează
+        cu intervalul cerut.
       parameters:
         - { name: stare, in: query, schema: { $ref: '#/components/schemas/StareRezervare' } }
-        - { name: from, in: query, schema: { type: string, format: date-time } }
-        - { name: to, in: query, schema: { type: string, format: date-time } }
+        - { name: from, in: query, description: Rezervările care se termină după acest moment, schema: { type: string, format: date-time } }
+        - { name: to, in: query, description: Rezervările care încep înainte de acest moment, schema: { type: string, format: date-time } }
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/Size'
       responses:
@@ -650,6 +654,7 @@ paths:
                       items:
                         type: array
                         items: { $ref: '#/components/schemas/Rezervare' }
+        '400': { $ref: '#/components/responses/BadRequest' }
     post:
       operationId: postReservations
       tags: [Rezervări]
@@ -688,6 +693,10 @@ paths:
       operationId: getReservationsByReservationId
       tags: [Rezervări]
       summary: Detaliile unei rezervări, cu istoricul aprobărilor
+      description: >
+        Vizibilă pentru solicitant, pentru aprobatori (Coordonatorul grantului rezervării, Responsabilul
+        laboratorului resursei sau cine a decis deja asupra ei) și pentru Administratorul de sistem.
+        Altfel 403.
       responses:
         '200':
           description: Rezervare
@@ -704,22 +713,33 @@ paths:
       operationId: postReservationsByReservationIdCancel
       tags: [Rezervări]
       summary: Anularea unei rezervări de către solicitant
-      description: Permis în stările ÎnAșteptareCoordonator, ÎnAșteptareLaborator și Aprobată (înainte de start).
+      description: >
+        Doar solicitantul își poate anula rezervarea, în stările ÎnAșteptareCoordonator, ÎnAșteptareLaborator
+        și Aprobată, înainte de start. Rezervarea trece în starea Anulată: intervalul se eliberează, iar orele
+        revin în soldul grantului.
       requestBody:
         content:
           application/json:
             schema:
               type: object
               properties:
-                motiv: { type: string }
+                motiv: { type: string, maxLength: 500 }
       responses:
         '200':
           description: Rezervare anulată; intervalul a fost eliberat
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Rezervare' }
+        '400': { $ref: '#/components/responses/BadRequest' }
         '403': { $ref: '#/components/responses/Forbidden' }
-        '409': { $ref: '#/components/responses/Conflict' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409':
+          description: >
+            Conflict cu starea curentă: starea nu permite anularea (`ANULARE_NEPERMISA`)
+            sau rezervarea a început deja (`REZERVARE_INCEPUTA`)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
 
   /reservations/{reservationId}/check-in:
     parameters:
