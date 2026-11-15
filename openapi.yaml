@@ -761,7 +761,10 @@ paths:
       summary: Cererile care așteaptă decizia utilizatorului curent
       description: >
         Coordonatorul vede cererile ÎnAșteptareCoordonator de pe granturile sale;
-        Responsabilul de laborator vede cererile ÎnAșteptareLaborator din laboratoarele sale.
+        Responsabilul de laborator vede cererile ÎnAșteptareLaborator din laboratoarele sale
+        (cele mai apropiate primele; cererile al căror start a trecut nu mai apar). Cu `aprobate` /
+        `respinse` se întorc cererile asupra cărora utilizatorul a decis deja, cele mai recente
+        decizii primele. Administratorul de sistem nu face parte din fluxul de aprobare.
       parameters:
         - { name: stare, in: query, schema: { type: string, enum: [inAsteptare, aprobate, respinse], default: inAsteptare } }
       responses:
@@ -772,7 +775,12 @@ paths:
               schema:
                 type: array
                 items: { $ref: '#/components/schemas/RezervareDetaliu' }
-        '403': { $ref: '#/components/responses/Forbidden' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403':
+          description: Utilizatorul nu este nici Coordonator de grant, nici Responsabil de laborator (`ACCES_INTERZIS`)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
 
   /approvals/{reservationId}/approve:
     parameters:
@@ -794,8 +802,23 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Aprobare' }
-        '403': { $ref: '#/components/responses/Forbidden' }
-        '409': { $ref: '#/components/responses/Conflict' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403':
+          description: >
+            Utilizatorul nu este Coordonator de grant sau Responsabil de laborator (`ACCES_INTERZIS`),
+            nu este aprobatorul nivelului curent al cererii (`FARA_DREPT_APROBARE`)
+            sau cererea este chiar a lui (`AUTO_APROBARE_INTERZISA`)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409':
+          description: >
+            Cererea nu mai așteaptă o decizie (`CERERE_FARA_DECIZIE_IN_ASTEPTARE`)
+            sau startul ei a trecut (`REZERVARE_INCEPUTA`)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
 
   /approvals/{reservationId}/reject:
     parameters:
@@ -804,6 +827,9 @@ paths:
       operationId: postApprovalsByReservationIdReject
       tags: [Aprobări]
       summary: Respingerea cererii (motivul este obligatoriu)
+      description: >
+        Respinge cererea la nivelul ei curent (Coordonatorul la nivel 1, Responsabilul la nivel 2).
+        Starea Respinsă eliberează intervalul, iar orele revin în soldul grantului.
       requestBody:
         required: true
         content:
@@ -819,7 +845,22 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/Aprobare' }
         '400': { $ref: '#/components/responses/BadRequest' }
-        '403': { $ref: '#/components/responses/Forbidden' }
+        '403':
+          description: >
+            Utilizatorul nu este Coordonator de grant sau Responsabil de laborator (`ACCES_INTERZIS`),
+            nu este aprobatorul nivelului curent al cererii (`FARA_DREPT_APROBARE`)
+            sau cererea este chiar a lui (`AUTO_APROBARE_INTERZISA`)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409':
+          description: >
+            Cererea nu mai așteaptă o decizie (`CERERE_FARA_DECIZIE_IN_ASTEPTARE`)
+            sau startul ei a trecut (`REZERVARE_INCEPUTA`)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
 
   # ───────────────────────── Notificări ─────────────────────────
   /notifications:
@@ -1200,7 +1241,7 @@ components:
     DecizieRequest:
       type: object
       properties:
-        observatie: { type: string, example: 'Aprobat, resursa e disponibilă.' }
+        observatie: { type: string, maxLength: 1000, example: 'Aprobat, resursa e disponibilă.' }
     Aprobare:
       type: object
       properties:
