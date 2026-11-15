@@ -189,12 +189,14 @@ paths:
       operationId: getUsersByUserId
       tags: [Utilizatori]
       summary: Detaliile unui utilizator
+      description: Vizibile pentru utilizatorul însuși și pentru Administratorul de sistem. Altfel 403.
       responses:
         '200':
           description: Utilizator
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Utilizator' }
+        '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
     patch:
       operationId: patchUsersByUserId
@@ -246,6 +248,9 @@ paths:
       operationId: getGrants
       tags: [Granturi]
       summary: Lista granturilor (utilizatorul vede granturile din care face parte)
+      description: >
+        Granturile pe care utilizatorul le coordonează (rolul CoordonatorGrant cu scopul grantului)
+        sau din care face parte ca membru, ordonate după cod. Administratorul de sistem le vede pe toate.
       responses:
         '200':
           description: Granturi
@@ -279,12 +284,16 @@ paths:
       operationId: getGrantsByGrantId
       tags: [Granturi]
       summary: Detaliile unui grant, inclusiv soldul de ore
+      description: >
+        Vizibile pentru Coordonatorul grantului (rolul CoordonatorGrant cu scopul grantului), pentru
+        membrii lui și pentru Administratorul de sistem. Altfel 403.
       responses:
         '200':
           description: Grant
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Grant' }
+        '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
     patch:
       operationId: patchGrantsByGrantId
