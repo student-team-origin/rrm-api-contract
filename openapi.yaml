@@ -562,6 +562,10 @@ paths:
       operationId: getResourcesByResourceIdAvailability
       tags: [Resurse]
       summary: Disponibilitatea unei resurse (pentru calendar)
+      description: >
+        Rezervările care ocupă resursa (ÎnAșteptareCoordonator, ÎnAșteptareLaborator, Aprobată,
+        Activă) și se suprapun cu intervalul [from, to), ordonate după start. Intervalul cerut
+        poate avea cel mult 93 de zile (vizualizarea pe lună a calendarului are 6 săptămâni).
       parameters:
         - { name: from, in: query, required: true, schema: { type: string, format: date-time } }
         - { name: to, in: query, required: true, schema: { type: string, format: date-time } }
@@ -573,6 +577,13 @@ paths:
               schema:
                 type: array
                 items: { $ref: '#/components/schemas/IntervalOcupat' }
+        '400':
+          description: >
+            `from` sau `to` lipsește ori nu are formatul ISO 8601 (`CERERE_INVALIDA`), `to` nu este
+            după `from` sau intervalul depășește 93 de zile (`INTERVAL_INVALID`)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
         '404': { $ref: '#/components/responses/NotFound' }
 
   /resources/{resourceId}/attachments:
