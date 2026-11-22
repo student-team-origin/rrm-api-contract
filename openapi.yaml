@@ -667,6 +667,8 @@ paths:
         Într-o singură tranzacție (hard lock): se verifică suprapunerea intervalului
         (inclusiv timpul de pregătire), soldul de ore al grantului și starea resursei,
         apoi se salvează cererea cu starea ÎnAșteptareCoordonator și se notifică coordonatorul.
+        Orele solicitate sunt durata intervalului (fără timpul de pregătire). Poate rezerva
+        pe orele unui grant doar Coordonatorul sau un membru al grantului (și Administratorul).
       requestBody:
         required: true
         content:
@@ -678,14 +680,34 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Rezervare' }
-        '400': { $ref: '#/components/responses/BadRequest' }
+        '400':
+          description: >
+            Câmpuri lipsă sau invalide (`DATE_INVALIDE`) ori interval greșit (`INTERVAL_INVALID`):
+            startul nu este în viitor, sfârșitul nu este după start sau durata depășește 999,99 ore
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '403':
+          description: Utilizatorul nu face parte din grant (`ACCES_INTERZIS`)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '404':
+          description: Resursa (`RESURSA_INEXISTENTA`) sau grantul (`GRANT_INEXISTENT`) nu există
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
         '409':
-          description: Interval ocupat; se returnează intervalele libere din aceeași zi
+          description: >
+            Interval ocupat (`INTERVAL_OCUPAT`); se returnează intervalele libere din aceeași zi
+            (după fusul orar al startului cerut), în care încape și timpul de pregătire
           content:
             application/json:
               schema: { $ref: '#/components/schemas/ConflictInterval' }
         '422':
-          description: Sold de ore insuficient pe grant sau resursă indisponibilă
+          description: >
+            Sold de ore insuficient pe grant (`SOLD_INSUFICIENT`) sau resursă indisponibilă,
+            în mentenanță ori defectă (`RESURSA_INDISPONIBILA`)
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Error' }
